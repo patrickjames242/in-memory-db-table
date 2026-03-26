@@ -1,19 +1,18 @@
 # in-memory-db-table
 
 `in-memory-db-table` is a small TypeScript library for
-storing records in memory while querying them with
-database-style indexed equality lookups.
+MobX-backed in-memory tables with database-style indexed
+equality lookups.
 
-It is extracted from the scheduler state layer in the
-SchoolMate application, where it is used as the central
-client-side store for things like:
+It is useful for app state that behaves like a
+normalized relational graph in memory, such as:
 
-- schedule entries keyed by `courseSectionId` and
-  `periodId`
-- course sections keyed by `courseId`
-- conflicts keyed by `conflictType` and `periodId`
-- join tables such as course-section-to-teacher and
-  course-section-to-class mappings
+- records keyed by a foreign key or status field
+- join tables for many-to-many relationships
+- filtered collections that must stay in sync as data is
+  inserted, updated, or removed
+- lookup-heavy UI state where exact-match reads are
+  common
 
 The core idea is simple:
 
@@ -265,8 +264,7 @@ const teachers = teachersTable.get([
 
 That usage pattern shows up frequently when one table
 stores only relationship rows and another table stores the
-entity rows. In SchoolMate, the scheduler uses this shape
-for patterns like:
+entity rows. A common pattern looks like:
 
 1. query a join table for `teacherId`s or `classId`s
 2. feed those ids into the entity table
@@ -343,10 +341,9 @@ const teacherIds = courseSectionTeachers
   .get('teacherId');
 ```
 
-This is one of the most important usage patterns from the
-SchoolMate scheduler. Join-table style records are queried
-by one foreign key, and then the opposite side of the
-relationship is projected directly.
+This is a common usage pattern for join-table style
+records. Query by one foreign key, then project the
+opposite side of the relationship directly.
 
 Examples:
 
@@ -385,7 +382,7 @@ boolean checks in computed values.
 Counts matching rows without allocating the result array.
 
 ```ts
-const count = schedulerConflicts
+const count = conflictsTable
   .whereIndexedColumn('periodId', periodId)
   .count();
 ```
@@ -480,11 +477,11 @@ When matching rows are inserted, updated, or deleted, the
 reaction re-runs because the underlying observable state
 changed.
 
-## Real Usage Patterns From SchoolMate
+## Real Usage Patterns
 
-The scheduler feature in SchoolMate uses multiple tables
-together to represent a normalized client-side data graph.
-These examples are generalized from that usage.
+Multiple tables can be composed together to represent a
+normalized client-side data graph. These examples show
+common ways to use the library in that style.
 
 ## 1. Entity tables
 
