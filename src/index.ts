@@ -1,0 +1,1 @@
+export { InMemoryDBTable } from './InMemoryDBTable';
