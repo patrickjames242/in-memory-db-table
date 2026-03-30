@@ -185,6 +185,15 @@ export class InMemoryDBTable<
     ]);
   }
 
+  /**
+   * Begins building a query limited to any of the provided values for a
+   * single indexed column. Chain additional indexed filters to AND them
+   * with this OR-style value set, then finish with `get()`, `exists()`,
+   * `count()`, `first()`, or `delete()`.
+   *
+   * @param column Indexed column (or `id`) being filtered.
+   * @param inValues Allowed values for the column.
+   */
   public whereIndexedColumnIn<
     Key extends IndexedColumns | 'id',
   >(
@@ -338,6 +347,11 @@ class InMemoryDBTableQuery<
     ]);
   }
 
+  /**
+   * Returns a new query with an indexed `IN` filter applied. Records must
+   * match any supplied value for this column, in addition to all other
+   * chained filters.
+   */
   whereIndexedColumnIn<
     Key extends TableIndexedColumns<Table>,
   >(
@@ -356,7 +370,8 @@ class InMemoryDBTableQuery<
   count(): number {
     let count = 0;
 
-    for (const _recordId of this.getResultIds()) {
+    for (const id of this.getResultIds()) {
+      void id;
       count += 1;
     }
 
@@ -367,7 +382,8 @@ class InMemoryDBTableQuery<
    * Quickly determines whether any records match the filters.
    */
   exists(): boolean {
-    for (const _recordId of this.getResultIds()) {
+    for (const id of this.getResultIds()) {
+      void id;
       return true;
     }
 
@@ -510,7 +526,11 @@ class InMemoryDBTableQuery<
               : new Set<string>();
           } else {
             return 'inValues' in filter
-              ? new Set<string>(filter.inValues as string[])
+              ? new Set<string>(
+                  (filter.inValues as string[]).filter((id) =>
+                    this.state.records.has(id)
+                  )
+                )
               : new Set<string>();
           }
         }

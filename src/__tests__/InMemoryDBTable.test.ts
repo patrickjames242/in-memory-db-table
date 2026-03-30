@@ -142,6 +142,72 @@ describe('InMemoryDBTable indexing', () => {
 
     expect(results).toEqual([]);
   });
+
+  it('returns results for an indexed IN query', () => {
+    const table = createClassesTable();
+
+    const classes = table
+      .whereIndexedColumnIn('teacherId', [
+        'teacher-1',
+        'teacher-3',
+      ])
+      .get();
+
+    expect(classes.map((record) => record.id)).toEqual(
+      expect.arrayContaining([
+        'class-1',
+        'class-3',
+        'class-4',
+      ])
+    );
+    expect(classes).toHaveLength(3);
+  });
+
+  it('supports combining IN filters with other indexed filters', () => {
+    const table = createClassesTable();
+
+    const classes = table
+      .whereIndexedColumnIn('teacherId', [
+        'teacher-1',
+        'teacher-2',
+      ])
+      .whereIndexedColumn('room', 'room-a')
+      .get();
+
+    expect(classes.map((record) => record.id)).toEqual(
+      expect.arrayContaining(['class-1', 'class-2'])
+    );
+    expect(classes).toHaveLength(2);
+  });
+
+  it('filters missing ids out of id IN queries', () => {
+    const table = createClassesTable();
+
+    const query = table.whereIndexedColumnIn('id', [
+      'missing-class',
+      'class-2',
+    ]);
+
+    expect(query.exists()).toBe(true);
+    expect(query.count()).toBe(1);
+    expect(query.get()).toEqual([
+      expect.objectContaining({ id: 'class-2' }),
+    ]);
+  });
+
+  it('treats an id IN query with only missing ids as empty', () => {
+    const table = createClassesTable();
+
+    const query = table.whereIndexedColumnIn('id', [
+      'missing-class',
+      'missing-class-2',
+    ]);
+
+    expect(query.exists()).toBe(false);
+    expect(query.count()).toBe(0);
+    expect(query.first()).toBeNull();
+    expect(query.get()).toEqual([]);
+  });
 });
 
 describe('InMemoryDBTable get overloads', () => {

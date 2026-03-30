@@ -298,6 +298,40 @@ WHERE teacher_id = 'teacher-1'
   AND room = 'room-a'
 ```
 
+## `table.whereIndexedColumnIn(column, values)`
+
+Starts an indexed query that matches any of the provided
+values for a single indexed column.
+
+```ts
+const query = table.whereIndexedColumnIn(
+  'teacherId',
+  ['teacher-1', 'teacher-3']
+);
+```
+
+You can chain additional indexed filters after it.
+
+```ts
+const results = table
+  .whereIndexedColumnIn('teacherId', [
+    'teacher-1',
+    'teacher-2',
+  ])
+  .whereIndexedColumn('room', 'room-a')
+  .get();
+```
+
+This behaves like:
+
+```sql
+WHERE teacher_id IN ('teacher-1', 'teacher-2')
+  AND room = 'room-a'
+```
+
+For `id` queries, missing ids are ignored the same way
+they are with `table.get(ids)`.
+
 ### Important limitation
 
 This package supports exact-match lookups on indexed
@@ -307,7 +341,7 @@ columns only. It does not support:
 - range queries
 - sorting operators
 - joins
-- OR groups
+- arbitrary grouped OR conditions across different columns
 
 If you need those, fetch the rows you want and derive the
 rest in normal JavaScript.
@@ -697,9 +731,11 @@ table.get(id);
 table.get(ids);
 
 table.whereIndexedColumn(column, value);
+table.whereIndexedColumnIn(column, values);
 table.uniqueColumnValues(column);
 
 query.whereIndexedColumn(column, value);
+query.whereIndexedColumnIn(column, values);
 query.get();
 query.get(column, distinct?);
 query.exists();
