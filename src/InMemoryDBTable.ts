@@ -181,7 +181,18 @@ export class InMemoryDBTable<
     value: T[Key]
   ): InMemoryDBTableQuery<this> {
     return new InMemoryDBTableQuery(this.state as any, [
-      [column as any, value],
+      { column: column as any, value },
+    ]);
+  }
+
+  public whereIndexedColumnIn<
+    Key extends IndexedColumns | 'id',
+  >(
+    column: Key,
+    inValues: T[Key][]
+  ): InMemoryDBTableQuery<this> {
+    return new InMemoryDBTableQuery(this.state as any, [
+      { column: column as any, inValues: inValues },
     ]);
   }
 
@@ -285,6 +296,10 @@ type TableIndexedColumns<T> =
     ? Indexed | 'id'
     : never;
 
+type IndexedColumnFilter<T> = {
+  column: TableIndexedColumns<T>;
+} & ({ inValues: unknown[] } | { value: unknown });
+
 /**
  * Immutable query builder returned from
  * `InMemoryDBTable#whereIndexedColumn`.
@@ -304,10 +319,7 @@ class InMemoryDBTableQuery<
       TableRecordType<Table>,
       TableIndexedColumns<Table>
     >,
-    private readonly indexedColumnFilters: [
-      key: TableIndexedColumns<Table>,
-      value: unknown,
-    ][] = []
+    private readonly indexedColumnFilters: IndexedColumnFilter<Table>[] = []
   ) {}
 
   /**
@@ -322,7 +334,19 @@ class InMemoryDBTableQuery<
   ): InMemoryDBTableQuery<Table> {
     return new InMemoryDBTableQuery<Table>(this.state, [
       ...this.indexedColumnFilters,
-      [column, value],
+      { column, value },
+    ]);
+  }
+
+  whereIndexedColumnIn<
+    Key extends TableIndexedColumns<Table>,
+  >(
+    column: Key,
+    inValues: TableRecordType<Table>[Key][]
+  ): InMemoryDBTableQuery<Table> {
+    return new InMemoryDBTableQuery<Table>(this.state, [
+      ...this.indexedColumnFilters,
+      { column, inValues },
     ]);
   }
 
@@ -397,7 +421,10 @@ class InMemoryDBTableQuery<
     distinct?: boolean
   ): TableRecordType<Table>[Column][];
   get(): TableRecordType<Table>[];
-  get(column?: unknown, distinct: boolean = false): unknown {
+  get(
+    column?: unknown,
+    distinct: boolean = false
+  ): unknown {
     if (column === undefined) {
       const results: TableRecordType<Table>[] = [];
 
@@ -472,15 +499,43 @@ class InMemoryDBTableQuery<
     }
 
     const resolvedIndexSets = this.indexedColumnFilters.map(
-      ([column, value]) => {
+      (filter) => {
+        const column = filter.column;
         if (column === 'id') {
-          return this.state.records.has(value as string)
-            ? new Set<string>([value as string])
-            : new Set<string>();
+          if ('value' in filter) {
+            return this.state.records.has(
+              filter.value as string
+            )
+              ? new Set<string>([filter.value as string])
+              : new Set<string>();
+          } else {
+            return 'inValues' in filter
+              ? new Set<string>(filter.inValues as string[])
+              : new Set<string>();
+          }
         }
 
         const columnIndex = this.state.indices.get(column);
-        return columnIndex?.get(value) ?? new Set<string>();
+
+        if ('value' in filter) {
+          return (
+            columnIndex?.get(filter.value) ??
+            new Set<string>()
+          );
+        } else {
+          const resultSet = new Set<string>();
+
+          for (const val of filter.inValues) {
+            const idSet = columnIndex?.get(val);
+            if (idSet) {
+              for (const id of idSet) {
+                resultSet.add(id);
+              }
+            }
+          }
+
+          return resultSet;
+        }
       }
     );
 
