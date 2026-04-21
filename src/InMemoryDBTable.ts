@@ -99,17 +99,19 @@ export class InMemoryDBTable<
   }
 
   /**
-   * Deletes records by id. Accept either a single id or an array to
-   * perform batch deletes. Indices are cleaned up automatically to avoid
-   * dangling pointers that could pollute query results.
+   * Deletes records by id. Accept either no arguments to clear the
+   * entire table, a single id, or an array to perform batch deletes.
+   * Indices are cleaned up automatically to avoid dangling pointers
+   * that could pollute query results.
    *
    * Missing ids are ignored.
    *
-   * @param id Single id or list of ids to remove.
+   * @param id Optional single id or list of ids to remove.
    */
+  public delete(): void;
   public delete(id: string): void;
   public delete(ids: string[]): void;
-  @action public delete(id: string | string[]): void {
+  @action public delete(id?: string | string[]): void {
     const deleteSingle = (recordId: string): void => {
       const existingRecord =
         this.state.records.get(recordId);
@@ -124,6 +126,13 @@ export class InMemoryDBTable<
 
       this.state.records.delete(recordId);
     };
+
+    if (id === undefined) {
+      Array.from(this.state.records.keys()).forEach(
+        (recordId) => deleteSingle(recordId)
+      );
+      return;
+    }
 
     if (Array.isArray(id)) {
       id.forEach((singleId) => deleteSingle(singleId));

@@ -121,6 +121,23 @@ describe('InMemoryDBTable indexing', () => {
     ).toHaveLength(1);
   });
 
+  it('deletes every record when called without arguments', () => {
+    const table = createClassesTable();
+
+    table.delete();
+
+    expect(table.count()).toBe(0);
+    expect(table.get()).toEqual([]);
+    expect(
+      table
+        .whereIndexedColumn('teacherId', 'teacher-1')
+        .get()
+    ).toEqual([]);
+    expect(
+      Array.from(table.uniqueColumnValues('teacherId'))
+    ).toEqual([]);
+  });
+
   it('supports querying by id through the indexed query API', () => {
     const table = createClassesTable();
 
