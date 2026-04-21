@@ -1,6 +1,6 @@
 {
   "name": "in-memory-db-table",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "MobX-backed in-memory tables with indexed equality queries and query-builder helpers.",
   "type": "module",
   "main": "./dist/index.cjs",
