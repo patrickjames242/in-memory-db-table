@@ -19,7 +19,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node ./scripts/postbuild-transform.mjs",
     "clean": "rm -rf dist",
     "test": "jest",
     "test:watch": "jest --watch",
