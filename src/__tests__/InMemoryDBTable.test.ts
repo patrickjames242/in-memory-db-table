@@ -244,6 +244,16 @@ describe('InMemoryDBTable get overloads', () => {
       'class-1',
     ]);
   });
+
+  it('returns the current number of records in the table', () => {
+    const table = createClassesTable();
+
+    expect(table.count()).toBe(baseRecords.length);
+
+    table.delete('class-4');
+
+    expect(table.count()).toBe(baseRecords.length - 1);
+  });
 });
 
 describe('InMemoryDBTable column helpers', () => {

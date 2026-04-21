@@ -166,6 +166,13 @@ export class InMemoryDBTable<
   }
 
   /**
+   * Returns the total number of records currently stored in the table.
+   */
+  public count(): number {
+    return this.state.records.size;
+  }
+
+  /**
    * Begins building a query limited to a single indexed column. Chain
    * additional `whereIndexedColumn` calls to AND multiple filters
    * together, then finish with `get()`, `exists()`, `count()`, `first()`,
