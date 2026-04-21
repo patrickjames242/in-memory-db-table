@@ -128,9 +128,7 @@ export class InMemoryDBTable<
     };
 
     if (id === undefined) {
-      Array.from(this.state.records.keys()).forEach(
-        (recordId) => deleteSingle(recordId)
-      );
+      this.state.clear();
       return;
     }
 
@@ -543,8 +541,8 @@ class InMemoryDBTableQuery<
           } else {
             return 'inValues' in filter
               ? new Set<string>(
-                  (filter.inValues as string[]).filter((id) =>
-                    this.state.records.has(id)
+                  (filter.inValues as string[]).filter(
+                    (id) => this.state.records.has(id)
                   )
                 )
               : new Set<string>();
@@ -613,4 +611,10 @@ class InMemoryDBTableState<
   @observable
   public accessor columnsToIndex: ObservableSet<IndexedColumns> =
     new ObservableSet();
+
+  @action
+  public clear(): void {
+    this.records = new ObservableMap();
+    this.indices = new ObservableMap();
+  }
 }
